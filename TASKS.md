@@ -15,6 +15,6 @@
 | T-204 | Procedural audio + музыка, settings-aware | UI/Audio | SA2 | T-001 | DONE | WebAudio-синтез, settings gate | src/audio/** | e2e no console errors |
 | T-301 | PlatformAdapter: Telegram lifecycle, haptics, cloud storage | Platform | SA3 | T-001 | DONE | lifecycle+haptics+CloudStorage mirror; cloud-вызовы ограничены isTelegram | src/platform/** | e2e mock |
 | T-302 | E2E Playwright + telegram mock + viewport matrix | Platform | SA3 | T-301,T-202 | DONE | 14/14 pass; mock глушит реальный SDK через page.route | tests/e2e/**, playwright.config.ts | 14 pass |
-| T-303 | Deploy (GitHub Pages workflow) + DEPLOYMENT.md | Platform | SA3 | T-302 | REVIEW | workflow написан, публикация ещё не выполнялась | .github/workflows/**, DEPLOYMENT.md | smoke pending |
-| T-304 | Telegram bot wiring (scripts, вне репо токена) | Platform | SA3 | T-303 | REVIEW | getMe verified (Blockfall); setWebApp — после деплоя | scripts/telegram-setup.mjs | getMe pass |
-| T-900 | Release audit + интеграция | Lead | Lead | все | IN_PROGRESS | локальный пайплайн зелёный: tsc 0, vitest 49, playwright 14, build 44.7KB | TEST_REPORT.md | полный прогон |
+| T-303 | Deploy (GitHub Pages workflow) + DEPLOYMENT.md | Platform | SA3 | T-302 | DONE | Pages активен, CI-ран 36643369764 success, https://siertum.github.io/blockfall/ отдаёт app (E2E 8/8 по живому URL) | .github/workflows/**, DEPLOYMENT.md | smoke pass |
+| T-304 | Telegram bot wiring (scripts, вне репо токена) | Platform | SA3 | T-303 | DONE | getMe + setMyCommands (/play) ok; WebApp URL — через @BotFather | scripts/telegram-setup.mjs | pass |
+| T-900 | Release audit + интеграция | Lead | Lead | все | DONE | TEST_REPORT.md; локально tsc 0 / vitest 49 / playwright 14, прод E2E 8/8 | TEST_REPORT.md | полный прогон |
