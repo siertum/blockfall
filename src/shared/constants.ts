@@ -109,7 +109,7 @@ export const KICKS_I: KickTable = Object.fromEntries([
   k(0, 3, [ {x:0,y:0}, {x:-1,y:0}, {x:2,y:0}, {x:-1,y:-2}, {x:2,y:1} ]),
 ]);
 
-// ---------- Visual identity: "Bubble Grove" ----------
+// ---------- Visual identity: "Blockfall" ----------
 // Dusk garden palette; pieces are clusters of glowing sap-bubbles.
 export const PIECE_COLORS: Record<PieceKind, { base: string; glow: string; hi: string }> = {
   I: { base: '#5fd4d0', glow: 'rgba(95,212,208,0.55)', hi: '#c9fff9' }, // mint stream

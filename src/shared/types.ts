@@ -234,9 +234,9 @@ export interface Settings {
   /** Right-hand layout preference etc. reserved; UI may add keys ONLY as optional. */
 }
 
-export const SETTINGS_KEY = '***';
-export const HIGHSCORE_KEY = '***';
-export const BOARDSTATS_KEY = '***';
+export const SETTINGS_KEY = 'blockfall:settings';
+export const HIGHSCORE_KEY = 'blockfall:highscore';
+export const BOARDSTATS_KEY = 'blockfall:stats';
 
 export interface Store {
   get<T>(key: string, fallback: T): T;

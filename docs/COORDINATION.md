@@ -1,4 +1,4 @@
-# COORDINATION — Bubble Grove (правила разработки)
+# COORDINATION — Blockfall (правила разработки)
 
 (Lead не смог создать AGENTS.md — запрос подтверждения истёк; функциональный эквивалент здесь.)
 

@@ -1,5 +1,5 @@
 // ============================================================================
-// Bubble Grove — main orchestrator. OWNED BY LEAD. Subagents: do not edit.
+// Blockfall — main orchestrator. OWNED BY LEAD. Subagents: do not edit.
 // Wires: Engine <-> Renderer <-> UI <-> Audio <-> Platform <-> Store.
 // ============================================================================
 import type {
@@ -50,7 +50,6 @@ class App {
   private platform: PlatformAdapter;
   private store: Store;
   private settings: Settings;
-  private raf = 0;
   private lastT = 0;
   private portrait: boolean;
 
@@ -104,7 +103,7 @@ class App {
     else this.ui.show('menu');
 
     this.lastT = performance.now();
-    this.raf = requestAnimationFrame(this.frame);
+    requestAnimationFrame(this.frame);
   }
 
   // ---------- main loop ----------
@@ -118,7 +117,7 @@ class App {
     this.renderer.render(st, dt);
     this.ui.updateHud(st);
     this.platform.confirmClose(st.phase === 'playing');
-    this.raf = requestAnimationFrame(this.frame);
+    requestAnimationFrame(this.frame);
   };
 
   private emit(events: GameEvent[]) {
