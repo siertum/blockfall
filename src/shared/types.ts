@@ -213,8 +213,8 @@ export interface PlatformAdapter {
   cloudGet(key: string): string | null;
   haptic(o: HapticStyle | HapticNotification): void;
   /** Visibility / lifecycle callbacks (Telegram activated/deactivated + document visibilitychange). */
-  onVisibility(cb: (visible: boolean): void): void;
-  onOrientation(cb: (portrait: boolean): void): void;
+  onVisibility(cb: (visible: boolean) => void): void;
+  onOrientation(cb: (portrait: boolean) => void): void;
   /** Enable closing confirmation while playing; disable when not playing. */
   confirmClose(enabled: boolean, message?: string): void;
   /** Back-button-ish: register handler for Telegram BackButton if available. */
