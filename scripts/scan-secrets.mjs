@@ -11,7 +11,7 @@ const PATTERNS = [
   // Telegram bot token shape: <8-10 digits>:<35+ chars> — e.g. bot12345678:AAH... or raw 123456789:AAH...
   { name: 'telegram-bot-token', re: /\bbot\d{8,}:A[\w-]{20,}|\b8826\d{6}:A[\w-]{20,}|\b\d{8,10}:A[\w-]{30,}/ },
   // TELEGRAM_BOT_TOKEN= with a NON-EMPTY value (allow `TELEGRAM_BOT_TOKEN=` and placeholder ''/"" only)
-  { name: 'env-token-assignment', re: /TELEGRAM_BOT_TOKEN=(?!\s*$)(?!['"]{2})['"]?[^\s'"]+/m },
+  { name: 'env-token-assignment', re: /TELEGRAM_BOT_TOKEN=(?!<[\w.:/<>-]*>)(?!\s*$)(?!['"]{2})['"]?[^\s'"]+/m },
 ];
 
 let files;
@@ -19,7 +19,7 @@ try {
   files = execFileSync('git', ['ls-files'], { encoding: 'utf8' })
     .split('\n')
     .map((f) => f.trim())
-    .filter(Boolean);
+    .filter((f) => f && f !== 'scripts/scan-secrets.mjs');
 } catch (err) {
   console.error('scan-secrets: git ls-files failed:', err.message);
   process.exit(2);

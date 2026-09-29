@@ -51,7 +51,7 @@ npm run build && npx playwright test
 Токен сохранить только в локальный `.env` (он в `.gitignore`):
 
 ```
-TELEGRAM_BOT_TOKEN=123456789:AA...
+TELEGRAM_BOT_TOKEN=<bot-id>:<secret-token>
 WEB_APP_URL=https://<owner>.github.io/<repo>/
 ```
 
