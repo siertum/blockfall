@@ -76,7 +76,7 @@ interface ObStep {
 const OB_STEPS: ObStep[] = [
   { title: 'Свайп вбок', hint: 'Двигай фигуру пальцем: ~1 клетка на 24px.', demoClass: 'swipe-right' },
   { title: 'Тап — поворот', hint: 'Коснись поля, чтобы повернуть. Свайп вниз — мягкое падение.', demoClass: 'tap' },
-  { title: 'Сброс', hint: 'Свайп резко вниз или кнопка HARD — мгновенный сброс. Свайп вверх — hold.', demoClass: 'swipe-down' },
+  { title: 'Сброс', hint: 'Свайп резко вниз или кнопка «Сброс» — мгновенный сброс. Свайп вверх — «Заменить».', demoClass: 'swipe-down' },
 ];
 
 // touch tuning
@@ -136,16 +136,8 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   nextCanvas.height = 128 * 2;
   nextQueue.append(nextLabel, nextCanvas);
 
-  const btnPause = el<HTMLButtonElement>('button', 'btn-pause', 'btn-pause');
-  btnPause.setAttribute('aria-label', 'Пауза');
-  btnPause.textContent = '⏸';
-  btnPause.addEventListener('click', () => {
-    click();
-    handlers.onPause();
-  });
-
   hud.append(holdSlot, stats, nextQueue);
-  root.append(hud, btnPause);
+  root.append(hud);
 
   // ======================= touch-зона =======================
   const touchZone = el<HTMLDivElement>('div', undefined, 'touch-zone');
@@ -157,17 +149,19 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const clusterL = el<HTMLDivElement>('div', 'ctl-cluster left');
   const clusterR = el<HTMLDivElement>('div', 'ctl-cluster right');
 
-  const ctlHold = el<HTMLButtonElement>('button', 'ctl-btn');
-  ctlHold.innerHTML = '<span class="glyph">⇅</span>Hold';
-  const ctlPause = el<HTMLButtonElement>('button', 'ctl-btn');
-  ctlPause.innerHTML = '<span class="glyph">⏸</span>';
+  const ctlHold = el<HTMLButtonElement>('button', 'ctl-btn', 'ctl-hold');
+  ctlHold.innerHTML = '<span class="glyph">⇅</span>Заменить';
+  ctlHold.setAttribute('aria-label', 'Заменить');
+  const ctlPause = el<HTMLButtonElement>('button', 'ctl-btn', 'btn-pause');
+  ctlPause.innerHTML = '<span class="glyph">⏸</span>Пауза';
   ctlPause.setAttribute('aria-label', 'Пауза');
 
   const ctlRotate = el<HTMLButtonElement>('button', 'ctl-btn');
-  ctlRotate.innerHTML = '<span class="glyph">⟳</span>';
+  ctlRotate.innerHTML = '<span class="glyph">⟳</span>Поворот';
   ctlRotate.setAttribute('aria-label', 'Поворот');
   const ctlHard = el<HTMLButtonElement>('button', 'ctl-btn hard');
-  ctlHard.innerHTML = '<span class="glyph">⤓</span>HARD';
+  ctlHard.innerHTML = '<span class="glyph">⤓</span>Сброс';
+  ctlHard.setAttribute('aria-label', 'Сброс');
 
   clusterL.append(ctlHold, ctlPause);
   clusterR.append(ctlRotate, ctlHard);
@@ -225,18 +219,62 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     show('settings');
   });
 
+  // --- пауза + кнопка с защитой от случайного нажатия ---
+  const HOLD_RESTART_MS = 2000;
+  const bindHoldRestart = (node: HTMLElement): void => {
+    let raf = 0;
+    let t0 = 0;
+    let fired = false;
+    const reset = (): void => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      if (!fired) node.classList.remove('holding');
+      node.style.setProperty('--hold', '0');
+    };
+    const stop = (): void => reset();
+    node.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (raf) return;
+      fired = false;
+      t0 = performance.now();
+      node.classList.add('holding');
+      node.classList.remove('done');
+      const tick = (): void => {
+        const p = Math.min(1, (performance.now() - t0) / HOLD_RESTART_MS);
+        node.style.setProperty('--hold', String(p));
+        if (p >= 1) {
+          fired = true;
+          node.classList.remove('holding');
+          node.classList.add('done');
+          click();
+          handlers.onRestart();
+          window.setTimeout(() => node.classList.remove('done'), 600);
+          reset();
+          return;
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) node.addEventListener(ev, stop);
+  };
+
   // --- pause ---
   const pauseScr = mkScreen('pause');
   const pauseH = el<HTMLHeadingElement>('h2');
   pauseH.textContent = 'Пауза';
   const btnResume = el<HTMLButtonElement>('button', 'btn primary', 'btn-resume');
   btnResume.textContent = 'Продолжить';
+  const btnRestartPause = el<HTMLButtonElement>('button', 'btn ghost hold-restart', 'btn-restart-pause');
+  btnRestartPause.textContent = 'Начать заново';
+  btnRestartPause.setAttribute('aria-label', 'Начать заново (удерживайте 2 секунды)');
+  bindHoldRestart(btnRestartPause);
   const btnPauseSettings = el<HTMLButtonElement>('button', 'btn ghost', 'btn-settings-pause');
   btnPauseSettings.textContent = 'Настройки';
   const btnQuit = el<HTMLButtonElement>('button', 'btn ghost', 'btn-quit');
   btnQuit.textContent = 'В меню';
   const pauseStack = el<HTMLDivElement>('div', 'menu-stack');
-  pauseStack.append(btnResume, btnPauseSettings, btnQuit);
+  pauseStack.append(btnResume, btnRestartPause, btnPauseSettings, btnQuit);
   pauseScr.append(pauseH, pauseStack);
   btnResume.addEventListener('click', () => {
     click();
@@ -265,18 +303,16 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const newRec = el<HTMLDivElement>('div', 'new-record', 'new-record');
   newRec.textContent = 'НОВЫЙ РЕКОРД!';
   overStats.append(overScore, overLines, overLevel, newRec);
-  const btnRestart = el<HTMLButtonElement>('button', 'btn primary', 'btn-restart');
-  btnRestart.textContent = 'Ещё раз';
+  const btnRestart = el<HTMLButtonElement>('button', 'btn primary hold-restart', 'btn-restart');
+  btnRestart.textContent = 'Начать заново';
+  btnRestart.setAttribute('aria-label', 'Начать заново (удерживайте 2 секунды)');
+  bindHoldRestart(btnRestart);
   const btnQuit2 = el<HTMLButtonElement>('button', 'btn ghost');
   btnQuit2.setAttribute('data-testid', 'btn-quit-menu');
   btnQuit2.textContent = 'В меню';
   const overStack = el<HTMLDivElement>('div', 'menu-stack');
   overStack.append(btnRestart, btnQuit2);
   overScr.append(overH, overStats, overStack);
-  btnRestart.addEventListener('click', () => {
-    click();
-    handlers.onRestart();
-  });
   btnQuit2.addEventListener('click', () => {
     click();
     handlers.onQuitToMenu();
@@ -400,9 +436,8 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     if (name !== 'settings') lastNonSettings = name;
     const gameVisible = name === 'game' || name === 'pause';
     hud.classList.toggle('active', gameVisible);
-    controls.classList.toggle('active', name === 'game');
+    controls.classList.toggle('active', gameVisible);
     touchZone.classList.toggle('active', name === 'game');
-    btnPause.classList.toggle('visible', gameVisible);
     if (name === 'settings') {
       const target = screens.get('settings')!;
       for (const node of screens.values()) node.classList.remove('active');

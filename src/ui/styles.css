@@ -174,32 +174,6 @@ body {
   display: block;
 }
 
-.btn-pause {
-  position: absolute;
-  top: calc(8px + var(--sat));
-  right: calc(10px + var(--sar));
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--panel-edge);
-  background: var(--panel);
-  color: var(--ink);
-  font-size: 18px;
-  line-height: 1;
-  z-index: 12;
-  pointer-events: auto;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-.hud.active .btn-pause,
-.btn-pause.visible {
-  display: flex;
-}
-.btn-pause:active {
-  transform: scale(0.92);
-}
-
 /* ------------------------------------------------------- нижние контролы -- */
 .controls {
   position: absolute;
@@ -239,9 +213,9 @@ body {
   border: 1px solid var(--panel-edge);
   background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.14), rgba(10, 26, 24, 0.85) 70%);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.01em;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -252,8 +226,9 @@ body {
   user-select: none;
 }
 .ctl-btn .glyph {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 400;
+  line-height: 1.1;
 }
 .ctl-btn:active {
   transform: scale(0.93);
@@ -333,6 +308,38 @@ body {
   color: #08211a;
   border: none;
   box-shadow: 0 10px 30px rgba(111, 206, 116, 0.4);
+}
+
+/* --- кнопка «Начать заново» с защитой от случайного нажатия (hold 2s) --- */
+.btn.hold-restart {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.btn.hold-restart::before {
+  /* ползунок прогресса: заполняется слева направо за 2 секунды */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(111, 206, 116, 0.55), rgba(111, 206, 116, 0.75));
+  transform: scaleX(var(--hold, 0));
+  transform-origin: left center;
+  transition: transform 0.05s linear;
+}
+.btn.hold-restart.holding {
+  border-color: rgba(111, 206, 116, 0.8);
+  color: var(--ink);
+}
+.btn.hold-restart.done {
+  background: #7fd985;
+  color: #08211a;
+  border-color: #7fd985;
+  box-shadow: 0 0 34px rgba(111, 206, 116, 0.9);
 }
 
 /* --- меню --- */

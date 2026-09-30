@@ -38,6 +38,17 @@ async function startGame(page: Page): Promise<void> {
   await expect(phase(page)).resolves.toBe('playing');
 }
 
+/** Restart via hold-to-confirm button (press ≥2.2 s until it turns green). */
+async function holdRestart(page: Page, testid = 'btn-restart'): Promise<void> {
+  const btn = page.getByTestId(testid);
+  const box = await btn.boundingBox();
+  if (!box) throw new Error(`${testid} not visible`);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(2300);
+  await page.mouse.up();
+}
+
 async function currentScore(page: Page): Promise<number> {
   const raw = (await page.getByTestId('hud-score').innerText()).replace(/\s|\u00a0/g, '');
   return Number(raw);
@@ -103,6 +114,27 @@ test.describe('gameplay', () => {
     expect(errors).toEqual([]);
   });
 
+  test('hold-to-restart: quick click does nothing, 2s hold restarts', async ({ page }) => {
+    const errors = watchErrors(page);
+    await gotoApp(page);
+    await startGame(page);
+    await page.getByTestId('btn-pause').click();
+    await expect(phase(page)).resolves.toBe('paused');
+    const btn = page.getByTestId('btn-restart-pause');
+    const box = (await btn.boundingBox())!;
+    // accidental tap → no restart
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(300);
+    await expect(phase(page)).resolves.toBe('paused');
+    // deliberate 2 s hold → restart into playing
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(2300);
+    await page.mouse.up();
+    await expect(phase(page)).resolves.toBe('playing');
+    expect(errors).toEqual([]);
+  });
+
   test('settings toggle-sfx persists across reload', async ({ page }) => {
     const errors = watchErrors(page);
     await gotoApp(page);
@@ -145,7 +177,7 @@ test.describe('gameplay', () => {
       if (p !== 'playing') {
         // died naturally — restart to keep the board busy
         const rb = page.getByTestId('btn-restart');
-        if (await rb.isVisible().catch(() => false)) await rb.click();
+        if (await rb.isVisible().catch(() => false)) await holdRestart(page);
         else await page.getByTestId('btn-start').click();
       }
       await page.keyboard.press(moves % 3 === 0 ? 'ArrowLeft' : moves % 3 === 1 ? 'ArrowRight' : 'Space');
