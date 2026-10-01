@@ -28,6 +28,8 @@ const DEFAULT_SETTINGS: Settings = {
   sfx: true,
   haptics: true,
   onboarded: false,
+  // язык определяем один раз по браузеру: ru-* → ru, иначе en
+  lang: (navigator.language || 'en').toLowerCase().startsWith('ru') ? 'ru' : 'en',
 };
 
 const AUDIO_MAP: Partial<Record<GameEvent['type'], AudioEvent>> = {

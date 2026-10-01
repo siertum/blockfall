@@ -231,6 +231,8 @@ export interface Settings {
   haptics: boolean;
   /** Set after first onboarding completed. */
   onboarded: boolean;
+  /** UI language. Optional/additive (old saved settings may lack it). */
+  lang?: import('../ui/i18n').Lang;
   /** Right-hand layout preference etc. reserved; UI may add keys ONLY as optional. */
 }
 

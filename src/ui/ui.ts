@@ -13,6 +13,7 @@ import type {
   UIHandlers,
 } from '../shared/types';
 import { PIECES, PIECE_COLORS, NEXT_PREVIEW_SIZE } from '../shared/constants';
+import { I18N, type Dict, type Lang } from './i18n';
 
 // ---------- helpers ----------
 const el = <T extends HTMLElement>(tag: string, cls?: string, testid?: string): T => {
@@ -21,6 +22,10 @@ const el = <T extends HTMLElement>(tag: string, cls?: string, testid?: string): 
   if (testid) n.setAttribute('data-testid', testid);
   return n;
 };
+
+// --- язык: все подписи резолвятся через t() и применяются в applyLang() ---
+let lang: Lang = 'ru';
+const t = (k: keyof Dict): string => I18N[lang][k];
 
 /** Нарисовать мини-фигуру в cell-координатах на canvas (внутренние px). */
 function drawMiniPiece(
@@ -69,14 +74,14 @@ function roundRect(
 
 // ---------- onboarding steps ----------
 interface ObStep {
-  title: string;
-  hint: string;
+  title: keyof Dict;
+  hint: keyof Dict;
   demoClass: string;
 }
 const OB_STEPS: ObStep[] = [
-  { title: 'Свайп вбок', hint: 'Двигай фигуру пальцем: ~1 клетка на 24px.', demoClass: 'swipe-right' },
-  { title: 'Тап — поворот', hint: 'Коснись поля, чтобы повернуть. Свайп вниз — мягкое падение.', demoClass: 'tap' },
-  { title: 'Сброс', hint: 'Свайп резко вниз или кнопка «Сброс» — мгновенный сброс. Свайп вверх — «Заменить».', demoClass: 'swipe-down' },
+  { title: 'obSwipeTitle', hint: 'obSwipeHint', demoClass: 'swipe-right' },
+  { title: 'obTapTitle', hint: 'obTapHint', demoClass: 'tap' },
+  { title: 'ctlDrop', hint: 'obHardHint', demoClass: 'swipe-down' },
 ];
 
 // touch tuning
@@ -90,7 +95,7 @@ const HARD_SWIPE_MS = 300;
 export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   let screen: ScreenName = 'menu';
   let inputCb: ((a: InputAction) => void) | null = null;
-  let settings: Settings = { music: true, sfx: true, haptics: true, onboarded: true };
+  let settings: Settings = { music: true, sfx: true, haptics: true, onboarded: true, lang: undefined };
 
   const fire = (a: InputAction) => inputCb?.(a);
   const click = () => handlers.onUserGesture();
@@ -101,7 +106,7 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
 
   const holdSlot = el<HTMLDivElement>('div', 'hold-slot', 'hold-slot');
   const holdLabel = el<HTMLDivElement>('div', 'slot-label');
-  holdLabel.textContent = 'Hold';
+  holdLabel.textContent = t('hudHold');
   const holdCanvas = el<HTMLCanvasElement>('canvas', undefined, 'hold-canvas');
   holdCanvas.width = 52 * 2;
   holdCanvas.height = 40 * 2;
@@ -113,24 +118,26 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   scoreBig.setAttribute('data-testid', 'hud-score');
   scoreBig.textContent = '0';
   const statRow = el<HTMLDivElement>('div', 'row');
-  const mkStat = (testid: string, label: string): HTMLElement => {
+  const statLabelKeys = new Map<HTMLElement, keyof Dict>();
+  const mkStat = (testid: string, labelKey: keyof Dict): HTMLElement => {
     const s = el<HTMLSpanElement>('span');
-    s.append(document.createTextNode(label + ' '));
+    s.append(document.createTextNode(t(labelKey) + ' '));
     const b = el<HTMLSpanElement>('span');
     b.setAttribute('data-testid', testid);
     b.textContent = '0';
     s.append(b);
+    statLabelKeys.set(s, labelKey);
     return s;
   };
-  const highStat = mkStat('hud-high', 'Рекорд');
-  const linesStat = mkStat('hud-lines', 'Линии');
-  const levelStat = mkStat('hud-level', 'Ур');
+  const highStat = mkStat('hud-high', 'hudRecord');
+  const linesStat = mkStat('hud-lines', 'hudLines');
+  const levelStat = mkStat('hud-level', 'hudLevel');
   statRow.append(highStat, linesStat, levelStat);
   stats.append(scoreBig, statRow);
 
   const nextQueue = el<HTMLDivElement>('div', 'next-queue', 'next-queue');
   const nextLabel = el<HTMLDivElement>('div', 'slot-label');
-  nextLabel.textContent = 'Next';
+  nextLabel.textContent = t('hudNext');
   const nextCanvas = el<HTMLCanvasElement>('canvas', undefined, 'next-canvas');
   nextCanvas.width = 48 * 2;
   nextCanvas.height = 128 * 2;
@@ -150,18 +157,18 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const clusterR = el<HTMLDivElement>('div', 'ctl-cluster right');
 
   const ctlHold = el<HTMLButtonElement>('button', 'ctl-btn', 'ctl-hold');
-  ctlHold.innerHTML = '<span class="glyph">⇅</span>Заменить';
-  ctlHold.setAttribute('aria-label', 'Заменить');
+  ctlHold.innerHTML = '<span class="glyph">⇅</span>' + t('ctlSwap');
+  ctlHold.setAttribute('aria-label', t('ctlSwap'));
   const ctlPause = el<HTMLButtonElement>('button', 'ctl-btn', 'btn-pause');
-  ctlPause.innerHTML = '<span class="glyph">⏸</span>Пауза';
-  ctlPause.setAttribute('aria-label', 'Пауза');
+  ctlPause.innerHTML = '<span class="glyph">⏸</span>' + t('pause');
+  ctlPause.setAttribute('aria-label', t('pause'));
 
   const ctlRotate = el<HTMLButtonElement>('button', 'ctl-btn');
-  ctlRotate.innerHTML = '<span class="glyph">⟳</span>Поворот';
-  ctlRotate.setAttribute('aria-label', 'Поворот');
+  ctlRotate.innerHTML = '<span class="glyph">⟳</span>' + t('ctlRotate');
+  ctlRotate.setAttribute('aria-label', t('ctlRotate'));
   const ctlHard = el<HTMLButtonElement>('button', 'ctl-btn hard');
-  ctlHard.innerHTML = '<span class="glyph">⤓</span>Сброс';
-  ctlHard.setAttribute('aria-label', 'Сброс');
+  ctlHard.innerHTML = '<span class="glyph">⤓</span>' + t('ctlDrop');
+  ctlHard.setAttribute('aria-label', t('ctlDrop'));
 
   clusterL.append(ctlHold, ctlPause);
   clusterR.append(ctlRotate, ctlHard);
@@ -197,16 +204,16 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const bubbles = el<HTMLDivElement>('div', 'logo-bubbles');
   for (let i = 0; i < 5; i++) bubbles.append(el<HTMLSpanElement>('i'));
   const logo = el<HTMLHeadingElement>('h1', 'logo');
-  logo.textContent = 'Blockfall';
+  logo.textContent = t('logo');
   logoWrap.append(bubbles, logo);
   const logoSub = el<HTMLDivElement>('div', 'logo-sub');
-  logoSub.textContent = 'падающие блоки';
+  logoSub.textContent = t('logoSub');
   const menuHigh = el<HTMLDivElement>('div', 'menu-high');
-  menuHigh.innerHTML = 'Рекорд: <b data-testid="menu-high-value">0</b>';
+  menuHigh.innerHTML = t('menuHigh') + '<b data-testid="menu-high-value">0</b>';
   const btnStart = el<HTMLButtonElement>('button', 'btn primary', 'btn-start');
-  btnStart.textContent = 'Играть';
+  btnStart.textContent = t('play');
   const btnSettings = el<HTMLButtonElement>('button', 'btn ghost', 'btn-settings');
-  btnSettings.textContent = 'Настройки';
+  btnSettings.textContent = t('settings');
   const menuStack = el<HTMLDivElement>('div', 'menu-stack');
   menuStack.append(btnStart, btnSettings);
   menu.append(logoWrap, logoSub, menuHigh, menuStack);
@@ -262,17 +269,17 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   // --- pause ---
   const pauseScr = mkScreen('pause');
   const pauseH = el<HTMLHeadingElement>('h2');
-  pauseH.textContent = 'Пауза';
+  pauseH.textContent = t('pause');
   const btnResume = el<HTMLButtonElement>('button', 'btn primary', 'btn-resume');
-  btnResume.textContent = 'Продолжить';
+  btnResume.textContent = t('resume');
   const btnRestartPause = el<HTMLButtonElement>('button', 'btn ghost hold-restart', 'btn-restart-pause');
-  btnRestartPause.textContent = 'Начать заново';
-  btnRestartPause.setAttribute('aria-label', 'Начать заново (удерживайте 2 секунды)');
+  btnRestartPause.textContent = t('restart');
+  btnRestartPause.setAttribute('aria-label', t('restartHold'));
   bindHoldRestart(btnRestartPause);
   const btnPauseSettings = el<HTMLButtonElement>('button', 'btn ghost', 'btn-settings-pause');
-  btnPauseSettings.textContent = 'Настройки';
+  btnPauseSettings.textContent = t('settings');
   const btnQuit = el<HTMLButtonElement>('button', 'btn ghost', 'btn-quit');
-  btnQuit.textContent = 'В меню';
+  btnQuit.textContent = t('quitMenu');
   const pauseStack = el<HTMLDivElement>('div', 'menu-stack');
   pauseStack.append(btnResume, btnRestartPause, btnPauseSettings, btnQuit);
   pauseScr.append(pauseH, pauseStack);
@@ -292,7 +299,7 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   // --- gameover ---
   const overScr = mkScreen('gameover');
   const overH = el<HTMLHeadingElement>('h2');
-  overH.textContent = 'Игра окончена';
+  overH.textContent = t('gameOver');
   const overScore = el<HTMLDivElement>('div', 'score');
   overScore.setAttribute('data-testid', 'final-score');
   overScore.textContent = '0';
@@ -301,15 +308,15 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const overLevel = el<HTMLDivElement>('div', undefined, 'final-level');
   overScr.setAttribute('data-testid', 'screen-gameover');
   const newRec = el<HTMLDivElement>('div', 'new-record', 'new-record');
-  newRec.textContent = 'НОВЫЙ РЕКОРД!';
+  newRec.textContent = t('newRecord');
   overStats.append(overScore, overLines, overLevel, newRec);
   const btnRestart = el<HTMLButtonElement>('button', 'btn primary hold-restart', 'btn-restart');
-  btnRestart.textContent = 'Начать заново';
-  btnRestart.setAttribute('aria-label', 'Начать заново (удерживайте 2 секунды)');
+  btnRestart.textContent = t('restart');
+  btnRestart.setAttribute('aria-label', t('restartHold'));
   bindHoldRestart(btnRestart);
   const btnQuit2 = el<HTMLButtonElement>('button', 'btn ghost');
   btnQuit2.setAttribute('data-testid', 'btn-quit-menu');
-  btnQuit2.textContent = 'В меню';
+  btnQuit2.textContent = t('quitMenu');
   const overStack = el<HTMLDivElement>('div', 'menu-stack');
   overStack.append(btnRestart, btnQuit2);
   overScr.append(overH, overStats, overStack);
@@ -321,16 +328,18 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   // --- settings ---
   const setScr = mkScreen('settings');
   const setH = el<HTMLHeadingElement>('h2');
-  setH.textContent = 'Настройки';
+  setH.textContent = t('settings');
   const setList = el<HTMLDivElement>('div', 'settings-list');
-  const mkToggle = (label: string, key: keyof Settings, testid: string): HTMLElement => {
+  const rowLabelKeys = new Map<HTMLElement, keyof Dict>(); // подписи строк настроек
+  const mkToggle = (labelKey: keyof Dict, key: keyof Settings, testid: string): HTMLElement => {
     const row = el<HTMLDivElement>('div', 'setting-row');
-    const t = el<HTMLButtonElement>('span', 'toggle', testid);
-    t.setAttribute('role', 'switch');
+    const tg = el<HTMLButtonElement>('span', 'toggle', testid);
+    tg.setAttribute('role', 'switch');
     const span = el<HTMLSpanElement>('span');
-    span.textContent = label;
-    row.append(span, t);
-    t.addEventListener('click', () => {
+    span.textContent = t(labelKey);
+    rowLabelKeys.set(span, labelKey);
+    row.append(span, tg);
+    tg.addEventListener('click', () => {
       click();
       settings = { ...settings, [key]: !settings[key] };
       syncToggles();
@@ -338,12 +347,37 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     });
     return row;
   };
-  const tgMusic = mkToggle('Музыка', 'music', 'toggle-music');
-  const tgSfx = mkToggle('Звуки', 'sfx', 'toggle-sfx');
-  const tgHaptics = mkToggle('Вибрация', 'haptics', 'toggle-haptics');
-  setList.append(tgMusic, tgSfx, tgHaptics);
+  const tgMusic = mkToggle('setMusic', 'music', 'toggle-music');
+  const tgSfx = mkToggle('setSfx', 'sfx', 'toggle-sfx');
+  const tgHaptics = mkToggle('setHaptics', 'haptics', 'toggle-haptics');
+  // --- строка языка: сегментированный переключатель EN | РУ ---
+  const langRow = el<HTMLDivElement>('div', 'setting-row lang-row', 'toggle-lang');
+  const langRowLabel = el<HTMLSpanElement>('span');
+  langRowLabel.textContent = t('setLang');
+  rowLabelKeys.set(langRowLabel, 'setLang');
+  const langSeg = el<HTMLDivElement>('div', 'lang-seg');
+  const langBtns: Record<Lang, HTMLButtonElement> = {
+    en: el<HTMLButtonElement>('button', 'lang-opt', 'lang-en'),
+    ru: el<HTMLButtonElement>('button', 'lang-opt', 'lang-ru'),
+  };
+  const LANG_LABELS: Record<Lang, string> = { en: 'EN', ru: 'РУ' };
+  for (const l of ['en', 'ru'] as Lang[]) {
+    const b = langBtns[l];
+    b.type = 'button';
+    b.textContent = LANG_LABELS[l];
+    b.addEventListener('click', () => {
+      if (settings.lang === l) return;
+      click();
+      settings = { ...settings, lang: l };
+      applyLang();
+      handlers.onSettingsChanged({ ...settings });
+    });
+    langSeg.append(b);
+  }
+  langRow.append(langRowLabel, langSeg);
+  setList.append(langRow, tgMusic, tgSfx, tgHaptics);
   const btnSetBack = el<HTMLButtonElement>('button', 'btn primary', 'btn-settings-back');
-  btnSetBack.textContent = 'Готово';
+  btnSetBack.textContent = t('done');
   setScr.append(setH, setList, btnSetBack);
   btnSetBack.addEventListener('click', () => {
     click();
@@ -369,7 +403,7 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const phone = el<HTMLDivElement>('div', 'phone');
   phone.textContent = '📱';
   const orientP = el<HTMLParagraphElement>('p');
-  orientP.textContent = 'Поверните телефон вертикально';
+  orientP.textContent = t('orientMsg');
   orientScr.append(phone, orientP);
 
   // --- onboarding ---
@@ -388,20 +422,20 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     obDots.append(d);
   }
   const btnObNext = el<HTMLButtonElement>('button', 'btn primary', 'ob-next');
-  btnObNext.textContent = 'Дальше';
+  btnObNext.textContent = t('obNext');
   const btnObSkip = el<HTMLButtonElement>('button', 'btn ghost', 'ob-skip');
-  btnObSkip.textContent = 'Пропустить';
+  btnObSkip.textContent = t('obSkip');
   const obActions = el<HTMLDivElement>('div', 'ob-actions');
   obActions.append(btnObSkip, btnObNext);
   obScr.append(obDemo, obTitle, obHint, obDots, obActions);
   let obStep = 0;
   const renderOb = (): void => {
     const s = OB_STEPS[obStep];
-    obTitle.textContent = s.title;
-    obHint.textContent = s.hint;
+    obTitle.textContent = t(s.title);
+    obHint.textContent = t(s.hint);
     obDemo.className = 'ob-demo ' + s.demoClass;
     dotEls.forEach((d, i) => d.classList.toggle('on', i === obStep));
-    btnObNext.textContent = obStep === OB_STEPS.length - 1 ? 'Начать' : 'Дальше';
+    btnObNext.textContent = obStep === OB_STEPS.length - 1 ? t('obStart') : t('obNext');
   };
   renderOb();
   btnObNext.addEventListener('click', () => {
@@ -442,6 +476,9 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
       const target = screens.get('settings')!;
       for (const node of screens.values()) node.classList.remove('active');
       target.classList.add('active');
+    } else {
+      // уходим из настроек: их overlay цикл выше намеренно не трогает
+      screens.get('settings')!.classList.remove('active');
     }
     root.setAttribute('data-phase', phaseFor(name));
   }
@@ -517,8 +554,8 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
       if (fk !== lastFinalKey) {
         lastFinalKey = fk;
         txt(overScore, String(state.score));
-        overLines.textContent = `Линии: ${state.lines}`;
-        overLevel.textContent = `Уровень: ${state.level}`;
+        overLines.textContent = t('finalLines') + state.lines;
+        overLevel.textContent = t('finalLevel') + state.level;
         newRec.classList.toggle('show', state.score > 0 && state.score >= state.highScore);
       }
     }
@@ -663,9 +700,66 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   window.addEventListener('orientationchange', layout, { passive: true });
   layout();
 
+  // ======================= язык =======================
+  // Применить текущий settings.lang ко всем узлам DOM (структура не меняется).
+  // applySavedLang=false — не трогать DOM, пока реальный язык ещё не известен.
+  function applyLang(applySavedLang = true): void {
+    if (applySavedLang && settings.lang) lang = settings.lang;
+    // HUD
+    holdLabel.textContent = t('hudHold');
+    nextLabel.textContent = t('hudNext');
+    for (const [node, key] of statLabelKeys) {
+      if (node.firstChild) node.firstChild.nodeValue = t(key) + ' ';
+    }
+    // контролы
+    ctlHold.innerHTML = '<span class="glyph">⇅</span>' + t('ctlSwap');
+    ctlHold.setAttribute('aria-label', t('ctlSwap'));
+    ctlPause.innerHTML = '<span class="glyph">⏸</span>' + t('pause');
+    ctlPause.setAttribute('aria-label', t('pause'));
+    ctlRotate.innerHTML = '<span class="glyph">⟳</span>' + t('ctlRotate');
+    ctlRotate.setAttribute('aria-label', t('ctlRotate'));
+    ctlHard.innerHTML = '<span class="glyph">⤓</span>' + t('ctlDrop');
+    ctlHard.setAttribute('aria-label', t('ctlDrop'));
+    // меню (<b> с рекордом не пересоздаём — правим только текстовый префикс)
+    logo.textContent = t('logo');
+    logoSub.textContent = t('logoSub');
+    if (menuHigh.firstChild) menuHigh.firstChild.nodeValue = t('menuHigh');
+    btnStart.textContent = t('play');
+    btnSettings.textContent = t('settings');
+    // пауза
+    pauseH.textContent = t('pause');
+    btnResume.textContent = t('resume');
+    btnRestartPause.textContent = t('restart');
+    btnRestartPause.setAttribute('aria-label', t('restartHold'));
+    btnPauseSettings.textContent = t('settings');
+    btnQuit.textContent = t('quitMenu');
+    // gameover
+    overH.textContent = t('gameOver');
+    newRec.textContent = t('newRecord');
+    btnRestart.textContent = t('restart');
+    btnRestart.setAttribute('aria-label', t('restartHold'));
+    btnQuit2.textContent = t('quitMenu');
+    lastFinalKey = ''; // финальные строки перепишет следующий updateHud
+    // настройки
+    setH.textContent = t('settings');
+    for (const [node, key] of rowLabelKeys) node.textContent = t(key);
+    btnSetBack.textContent = t('done');
+    for (const l of ['en', 'ru'] as Lang[]) {
+      const b = langBtns[l];
+      const on = settings.lang === l;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    }
+    // ориентация / onboarding
+    orientP.textContent = t('orientMsg');
+    renderOb();
+  }
+  applyLang();
+
   function setSettings(s: Settings): void {
     settings = { ...settings, ...s };
     syncToggles();
+    if (s.lang) applyLang();
     // если игра живая — не прыгаем на экран настроек
     if (screen !== 'settings') show(screen);
   }
