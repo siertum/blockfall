@@ -494,30 +494,10 @@ body {
   background: var(--accent);
 }
 
-/* --- переключатель языка (сегменты EN | РУ в строке настроек) --- */
-.lang-seg {
-  display: flex;
-  border: 1px solid var(--panel-edge);
-  border-radius: 18px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-}
-.lang-opt {
-  min-width: 64px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  color: var(--ink-dim);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 800;
+/* --- кнопка языка в главном меню --- */
+.lang-menu-btn {
+  font-weight: 700;
   letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.lang-opt.on {
-  background: rgba(111, 206, 116, 0.35);
-  color: var(--ink);
 }
 
 /* --- ориентация --- */

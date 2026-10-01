@@ -214,8 +214,21 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   btnStart.textContent = t('play');
   const btnSettings = el<HTMLButtonElement>('button', 'btn ghost', 'btn-settings');
   btnSettings.textContent = t('settings');
+  // кнопка языка: одно нажатие — RU/EN (EN по умолчанию)
+  const btnLang = el<HTMLButtonElement>('button', 'btn ghost lang-menu-btn', 'btn-lang');
+  const LANG_LABELS: Record<Lang, string> = { en: 'English', ru: 'Русский' };
+  btnLang.textContent = LANG_LABELS.en;
+  btnLang.setAttribute('aria-label', 'Switch language / Сменить язык');
+  const setLang = (l: Lang): void => {
+    if (settings.lang === l) return;
+    click();
+    settings = { ...settings, lang: l };
+    applyLang();
+    handlers.onSettingsChanged({ ...settings });
+  };
+  btnLang.addEventListener('click', () => setLang(settings.lang === 'en' ? 'ru' : 'en'));
   const menuStack = el<HTMLDivElement>('div', 'menu-stack');
-  menuStack.append(btnStart, btnSettings);
+  menuStack.append(btnStart, btnSettings, btnLang);
   menu.append(logoWrap, logoSub, menuHigh, menuStack);
   btnStart.addEventListener('click', () => {
     click();
@@ -350,32 +363,7 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const tgMusic = mkToggle('setMusic', 'music', 'toggle-music');
   const tgSfx = mkToggle('setSfx', 'sfx', 'toggle-sfx');
   const tgHaptics = mkToggle('setHaptics', 'haptics', 'toggle-haptics');
-  // --- строка языка: сегментированный переключатель EN | РУ ---
-  const langRow = el<HTMLDivElement>('div', 'setting-row lang-row', 'toggle-lang');
-  const langRowLabel = el<HTMLSpanElement>('span');
-  langRowLabel.textContent = t('setLang');
-  rowLabelKeys.set(langRowLabel, 'setLang');
-  const langSeg = el<HTMLDivElement>('div', 'lang-seg');
-  const langBtns: Record<Lang, HTMLButtonElement> = {
-    en: el<HTMLButtonElement>('button', 'lang-opt', 'lang-en'),
-    ru: el<HTMLButtonElement>('button', 'lang-opt', 'lang-ru'),
-  };
-  const LANG_LABELS: Record<Lang, string> = { en: 'EN', ru: 'РУ' };
-  for (const l of ['en', 'ru'] as Lang[]) {
-    const b = langBtns[l];
-    b.type = 'button';
-    b.textContent = LANG_LABELS[l];
-    b.addEventListener('click', () => {
-      if (settings.lang === l) return;
-      click();
-      settings = { ...settings, lang: l };
-      applyLang();
-      handlers.onSettingsChanged({ ...settings });
-    });
-    langSeg.append(b);
-  }
-  langRow.append(langRowLabel, langSeg);
-  setList.append(langRow, tgMusic, tgSfx, tgHaptics);
+  setList.append(tgMusic, tgSfx, tgHaptics);
   const btnSetBack = el<HTMLButtonElement>('button', 'btn primary', 'btn-settings-back');
   btnSetBack.textContent = t('done');
   setScr.append(setH, setList, btnSetBack);
@@ -744,12 +732,7 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     setH.textContent = t('settings');
     for (const [node, key] of rowLabelKeys) node.textContent = t(key);
     btnSetBack.textContent = t('done');
-    for (const l of ['en', 'ru'] as Lang[]) {
-      const b = langBtns[l];
-      const on = settings.lang === l;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    }
+    btnLang.textContent = LANG_LABELS[lang];
     // ориентация / onboarding
     orientP.textContent = t('orientMsg');
     renderOb();
