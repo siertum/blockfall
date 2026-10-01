@@ -12,6 +12,7 @@ const ru = {
   logoSub: 'падающие блоки',
   play: 'Играть',
   settings: 'Настройки',
+  language: 'Язык',
   menuHigh: 'Рекорд: ',
   // HUD
   hudHold: 'Hold',
@@ -20,7 +21,6 @@ const ru = {
   hudLines: 'Линии',
   hudLevel: 'Ур',
   // кнопки контролов
-  ctlSwap: 'Заменить',
   ctlRotate: 'Поворот',
   ctlDrop: 'Сброс',
   // пауза
@@ -62,13 +62,13 @@ export const I18N: Record<Lang, Dict> = {
     logoSub: 'falling blocks',
     play: 'Play',
     settings: 'Settings',
+    language: 'Language',
     menuHigh: 'Best: ',
     hudHold: 'Hold',
     hudNext: 'Next',
     hudRecord: 'Record',
     hudLines: 'Lines',
     hudLevel: 'Lvl',
-    ctlSwap: 'Swap',
     ctlRotate: 'Rotate',
     ctlDrop: 'Drop',
     pause: 'Pause',

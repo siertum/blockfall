@@ -164,18 +164,21 @@ test.describe('gameplay', () => {
     expect(errors).toEqual([]);
   });
 
-  test('language button: EN ↔ RU relabels the menu', async ({ page }) => {
+  test('language row with flags: EN ↔ RU relabels the menu', async ({ page }) => {
     const errors = watchErrors(page);
     await gotoApp(page);
-    // по умолчанию — английский
+    // по умолчанию — английский, обе пилюли с флагами-картинками
     await expect(page.getByTestId('btn-start')).toHaveText('Play');
-    await page.getByTestId('btn-lang').click();
+    await expect(page.getByTestId('lang-en')).toHaveCount(1);
+    await expect(page.getByTestId('lang-ru')).toHaveCount(1);
+    await expect(page.getByTestId('lang-en')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('lang-ru').click();
     await expect
       .poll(async () => (await page.getByTestId('btn-start').innerText()).trim(), {
         message: 'menu must switch to Russian',
       })
       .toBe('Играть');
-    await page.getByTestId('btn-lang').click();
+    await page.getByTestId('lang-en').click();
     await expect
       .poll(async () => (await page.getByTestId('btn-start').innerText()).trim(), {
         message: 'menu must switch back to English',

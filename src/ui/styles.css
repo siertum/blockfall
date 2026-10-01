@@ -494,10 +494,53 @@ body {
   background: var(--accent);
 }
 
-/* --- кнопка языка в главном меню --- */
-.lang-menu-btn {
+/* --- ряд языка в главном меню --- */
+.lang-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  align-items: center;
+}
+.lang-row-label {
+  font-size: 13px;
+  color: var(--ink-dim);
+  letter-spacing: 0.06em;
+}
+.lang-seg {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.lang-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.lang-opt.on {
+  background: rgba(111, 206, 116, 0.28);
+  border-color: rgba(111, 206, 116, 0.55);
+  color: var(--ink);
+}
+.lang-flag {
+  display: inline-flex;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
 /* --- ориентация --- */

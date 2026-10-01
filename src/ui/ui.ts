@@ -92,6 +92,26 @@ const SWIPE_UP_MIN = 70; // px вверх для hold
 const HARD_SWIPE_DIST = PX_PER_CELL * 4.5; // > ~4 клеток вниз
 const HARD_SWIPE_MS = 300;
 
+// --- флаги как inline-SVG 20×14: emoji-флаги Windows Chrome рисует литерными
+// парами «US»/«RU», поэтому рисуем упрощённые полотнища сами (скругления — clipPath)
+const FLAG_US =
+  '<svg viewBox="0 0 20 14" width="20" height="14" aria-hidden="true" focusable="false">' +
+  '<clipPath id="fl-us"><rect width="20" height="14" rx="3"/></clipPath>' +
+  '<g clip-path="url(#fl-us)"><rect width="20" height="14" fill="#fff"/>' +
+  '<g fill="#b22234"><rect y="0" width="20" height="1"/><rect y="2" width="20" height="1"/><rect y="4" width="20" height="1"/>' +
+  '<rect y="6" width="20" height="1"/><rect y="8" width="20" height="1"/><rect y="10" width="20" height="1"/><rect y="12" width="20" height="1"/></g>' +
+  '<rect width="8" height="7" fill="#3c3b6e"/>' +
+  '<g fill="#fff"><circle cx="1.7" cy="1.4" r="0.45"/><circle cx="4" cy="1.4" r="0.45"/><circle cx="6.3" cy="1.4" r="0.45"/>' +
+  '<circle cx="2.85" cy="3.5" r="0.45"/><circle cx="5.15" cy="3.5" r="0.45"/>' +
+  '<circle cx="1.7" cy="5.6" r="0.45"/><circle cx="4" cy="5.6" r="0.45"/><circle cx="6.3" cy="5.6" r="0.45"/></g>' +
+  '</g></svg>';
+const FLAG_RU =
+  '<svg viewBox="0 0 20 14" width="20" height="14" aria-hidden="true" focusable="false">' +
+  '<clipPath id="fl-ru"><rect width="20" height="14" rx="3"/></clipPath>' +
+  '<g clip-path="url(#fl-ru)"><rect width="20" height="14" fill="#fff"/>' +
+  '<rect y="4.667" width="20" height="4.667" fill="#0039a6"/>' +
+  '<rect y="9.333" width="20" height="4.667" fill="#d52b1e"/></g></svg>';
+
 export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   let screen: ScreenName = 'menu';
   let inputCb: ((a: InputAction) => void) | null = null;
@@ -156,9 +176,6 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   const clusterL = el<HTMLDivElement>('div', 'ctl-cluster left');
   const clusterR = el<HTMLDivElement>('div', 'ctl-cluster right');
 
-  const ctlHold = el<HTMLButtonElement>('button', 'ctl-btn', 'ctl-hold');
-  ctlHold.innerHTML = '<span class="glyph">⇅</span>' + t('ctlSwap');
-  ctlHold.setAttribute('aria-label', t('ctlSwap'));
   const ctlPause = el<HTMLButtonElement>('button', 'ctl-btn', 'btn-pause');
   ctlPause.innerHTML = '<span class="glyph">⏸</span>' + t('pause');
   ctlPause.setAttribute('aria-label', t('pause'));
@@ -170,7 +187,7 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   ctlHard.innerHTML = '<span class="glyph">⤓</span>' + t('ctlDrop');
   ctlHard.setAttribute('aria-label', t('ctlDrop'));
 
-  clusterL.append(ctlHold, ctlPause);
+  clusterL.append(ctlPause);
   clusterR.append(ctlRotate, ctlHard);
   controls.append(clusterL, clusterR);
   root.append(controls);
@@ -182,7 +199,6 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
       fn();
     });
   };
-  ctlTap(ctlHold, () => fire('hold'));
   ctlTap(ctlPause, () => handlers.onPause());
   ctlTap(ctlRotate, () => fire('rotate-cw'));
   ctlTap(ctlHard, () => fire('hard-drop'));
@@ -214,11 +230,17 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
   btnStart.textContent = t('play');
   const btnSettings = el<HTMLButtonElement>('button', 'btn ghost', 'btn-settings');
   btnSettings.textContent = t('settings');
-  // кнопка языка: одно нажатие — RU/EN (EN по умолчанию)
-  const btnLang = el<HTMLButtonElement>('button', 'btn ghost lang-menu-btn', 'btn-lang');
-  const LANG_LABELS: Record<Lang, string> = { en: 'English', ru: 'Русский' };
-  btnLang.textContent = LANG_LABELS.en;
-  btnLang.setAttribute('aria-label', 'Switch language / Сменить язык');
+  // ряд языка: две пилюли с флагами (EN по умолчанию)
+  const FLAG_SVGS: Record<Lang, string> = { en: FLAG_US, ru: FLAG_RU };
+  const LANG_NAMES: Record<Lang, string> = { en: 'English', ru: 'Русский' };
+  const langRow = el<HTMLDivElement>('div', 'lang-row');
+  const langRowLabel = el<HTMLSpanElement>('span', 'lang-row-label');
+  langRowLabel.textContent = t('language');
+  const langSeg = el<HTMLDivElement>('div', 'lang-seg');
+  const langBtns: Record<Lang, HTMLButtonElement> = {
+    en: el<HTMLButtonElement>('button', 'lang-opt', 'lang-en'),
+    ru: el<HTMLButtonElement>('button', 'lang-opt', 'lang-ru'),
+  };
   const setLang = (l: Lang): void => {
     if (settings.lang === l) return;
     click();
@@ -226,9 +248,16 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     applyLang();
     handlers.onSettingsChanged({ ...settings });
   };
-  btnLang.addEventListener('click', () => setLang(settings.lang === 'en' ? 'ru' : 'en'));
+  for (const l of ['en', 'ru'] as Lang[]) {
+    const b = langBtns[l];
+    b.type = 'button';
+    b.innerHTML = `<span class="lang-flag">${FLAG_SVGS[l]}</span>` + LANG_NAMES[l];
+    b.addEventListener('click', () => setLang(l));
+    langSeg.append(b);
+  }
+  langRow.append(langRowLabel, langSeg);
   const menuStack = el<HTMLDivElement>('div', 'menu-stack');
-  menuStack.append(btnStart, btnSettings, btnLang);
+  menuStack.append(btnStart, btnSettings, langRow);
   menu.append(logoWrap, logoSub, menuHigh, menuStack);
   btnStart.addEventListener('click', () => {
     click();
@@ -700,8 +729,6 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
       if (node.firstChild) node.firstChild.nodeValue = t(key) + ' ';
     }
     // контролы
-    ctlHold.innerHTML = '<span class="glyph">⇅</span>' + t('ctlSwap');
-    ctlHold.setAttribute('aria-label', t('ctlSwap'));
     ctlPause.innerHTML = '<span class="glyph">⏸</span>' + t('pause');
     ctlPause.setAttribute('aria-label', t('pause'));
     ctlRotate.innerHTML = '<span class="glyph">⟳</span>' + t('ctlRotate');
@@ -732,7 +759,13 @@ export function createUI(root: HTMLElement, handlers: UIHandlers): UI {
     setH.textContent = t('settings');
     for (const [node, key] of rowLabelKeys) node.textContent = t(key);
     btnSetBack.textContent = t('done');
-    btnLang.textContent = LANG_LABELS[lang];
+    langRowLabel.textContent = t('language');
+    for (const l of ['en', 'ru'] as Lang[]) {
+      const b = langBtns[l];
+      const on = lang === l;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    }
     // ориентация / onboarding
     orientP.textContent = t('orientMsg');
     renderOb();

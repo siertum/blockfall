@@ -155,6 +155,11 @@ class AudioEngine implements AudioManager {
       this.unlock();
       if (!this.ctx) return;
     }
+    // контекст мог «уснуть» (webview в фоне) — реанимируем на любом звуке
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume().catch(() => undefined);
+      if (this.wantMusic && !this.musicOn) this.startMusic();
+    }
     if (!this.sfxEnabled) return;
     const t = this.now();
     switch (event) {

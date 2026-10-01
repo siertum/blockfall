@@ -93,6 +93,11 @@ class App {
     this.platform.init();
     this.platform.onVisibility((v) => {
       if (!v && this.engine.state.phase === 'playing') this.setPaused(true);
+      else if (v) {
+        // webview мог «оглухнуть» в фоне — подымаем контекст, музыка продолжит
+        this.audio.resumeCtx();
+        if (this.settings.music && this.engine.state.phase === 'playing') this.audio.startMusic();
+      }
     });
     this.platform.onOrientation((p) => this.updateOrientation(p));
     window.addEventListener('resize', () => this.onResize());
